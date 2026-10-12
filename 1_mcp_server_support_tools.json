@@ -1,0 +1,119 @@
+{
+  "name": "MCP Server - Support Ops Tools",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "support-ops"
+      },
+      "id": "s1",
+      "name": "MCP Server Trigger",
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "name": "lookup_order",
+        "description": "Look up an order by its order ID (e.g. ORD-1001). Input: the order ID only. Returns status, item, total, delivery info.",
+        "language": "javaScript",
+        "jsCode": "const orders = {\n  \"ORD-1001\": {status:\"Delivered\", item:\"Wireless Earbuds\", total:89.99, delivered_on:\"2026-10-05\", days_since_delivery:7},\n  \"ORD-1002\": {status:\"In Transit\", item:\"Mechanical Keyboard\", total:129.0, eta:\"2026-10-14\", carrier:\"TCS\", tracking:\"TCS-88231\"},\n  \"ORD-1003\": {status:\"Delivered\", item:\"Laptop Stand\", total:45.5, delivered_on:\"2026-08-20\", days_since_delivery:53},\n  \"ORD-1004\": {status:\"Processing\", item:\"USB-C Hub\", total:39.99}\n};\nconst id = String(query).trim().toUpperCase();\nreturn JSON.stringify(orders[id] || {error: \"Order not found: \" + id});"
+      },
+      "id": "s2",
+      "name": "Lookup Order",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        -300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "name": "get_refund_policy",
+        "description": "Returns the company refund policy. Call this before deciding refund eligibility. Input can be any text.",
+        "language": "javaScript",
+        "jsCode": "return `REFUND POLICY:\n- Delivered orders are refundable within 30 days of delivery.\n- Orders over 30 days old are NOT refundable; escalate to a human agent if the customer disputes.\n- In-transit or processing orders can be cancelled for a full refund.\n- Refunds over $100 require human approval (escalate).`;"
+      },
+      "id": "s3",
+      "name": "Get Refund Policy",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "name": "create_escalation_ticket",
+        "description": "Escalate to a human agent. Input: a short summary including order ID, issue and why it needs a human.",
+        "language": "javaScript",
+        "jsCode": "const ticketId = \"TKT-\" + Date.now().toString().slice(-6);\nreturn JSON.stringify({ticket_id: ticketId, status: \"Escalated to human agent\", summary: String(query), created_at: new Date().toISOString()});"
+      },
+      "id": "s4",
+      "name": "Create Escalation Ticket",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## MCP SERVER\nExposes 3 support tools over MCP.\n**Activate this workflow**, then copy the *Production URL* from the MCP Server Trigger node into the MCP Client node in workflow 2.\nSwap Code tools for Shopify / Jira / Slack nodes in real use.",
+        "height": 200,
+        "width": 360
+      },
+      "id": "s5",
+      "name": "Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -240
+      ]
+    }
+  ],
+  "connections": {
+    "Lookup Order": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Refund Policy": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Escalation Ticket": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
